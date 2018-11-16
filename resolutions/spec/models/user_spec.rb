@@ -1,18 +1,20 @@
+require 'rails_helper'
 RSpec.describe User, type: :model do
   subject(:good_user) { User.new(username: "steve", password: "password")}
   let(:broken_user) { User.new(username: '', password: 'password') }
   
   describe 'validations' do
-    # it 'validates presence of username' do
-    #   expect(:broken_user).not_to be_valid
-    # end
+    
     it { should validate_presence_of(:username) }
     it { should validate_uniqueness_of(:username) }
     it { should validate_presence_of(:password_digest) }
     it { should validate_length_of(:password).is_at_least(6).on(:create) }
+    # it 'validates presence of username' do
+    #   expect(:broken_user).not_to be_valid
+    # end
     it 'should have a session token' do
-      user = good_user.save!
-      expect(user.session_token).not_to be_nil
+      good_user.save!
+      expect(good_user.session_token).not_to be_nil
     end
     it "does not save password into the database" do
       expect(good_user.password_digest).not_to eq('password')
@@ -36,7 +38,7 @@ RSpec.describe User, type: :model do
   describe '#password=' do
     
     it 'sets an attr_reader for password' do
-      expect(good_user.password).to eq(password)
+      expect(good_user.password).to eq('password')
     end
     
     it 'changes the password' do 
@@ -71,13 +73,13 @@ RSpec.describe User, type: :model do
     end
     
     it "returns the user if username and password are correct" do
-      user = good_user.save!
-      expect(User.validate_user_credentials('steve', 'password')).to eq(user)
+      good_user.save!
+      expect(User.validate_user_credentials('steve', 'password')).to eq(good_user)
     end
     
     it "returns nil if username and password are incorrect" do
-      user = good_user.save!
-      expect(User.validate_user_credentials('steve', 'banana')).to eq(user)
+      good_user.save!
+      expect(User.validate_user_credentials('steve', 'banana')).to be nil
     end    
   end
   
