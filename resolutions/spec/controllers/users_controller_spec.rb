@@ -117,21 +117,40 @@ RSpec.describe UsersController, type: :controller do
       get :update
       expect(response).to have_http_status(:success)
     end
-    # it 'renders index' do
-    #   get :index
-    #   expect(response).to render_template(:index)
-    # end
-  end
+    
+    context "if logged out" do
+      it "respond with 401 status" do
+        perform_request
+        expect(request).to be_a_bad_request
+      end
+    end
+    
+    context "if logged in" do
+      before do 
+        allow(controller).to receive(:current_user) { user }
+      end 
+      
+      it "redirect to users#index page" do
+        expect(response).to redirect_to(user_url(user.id))
+      end
 
+      it "updates user in database" do
+        subject(:user) {User.create!(username: 'ineedrefreshing', password: 'whateverIwant')}
+        patch :update, params: { user: {username: 'potato'} }
+        expect(User.find_by(id: user.id).username).to eq('potato')
+      end
+    end
+  end
+  
   describe "GET #edit" do
     it "returns http success" do
       get :edit
       expect(response).to have_http_status(:success)
     end
+    
     it 'renders edit' do
       get :edit
       expect(response).to render_template(:edit)
     end
   end
-
 end
