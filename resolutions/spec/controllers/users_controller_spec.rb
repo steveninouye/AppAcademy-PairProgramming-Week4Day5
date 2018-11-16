@@ -14,17 +14,10 @@ RSpec.describe UsersController, type: :controller do
       get :index
       expect(response).to render_template(:index)
     end
-    
-    # it 'sets ivar users to all the users in db' do
-    #   user.save
-    #   other_user.save
-    #   all_users = :index
-    #   expect(all_users).to include(:user)
-    #   expect(all_users).to include(:other_user)
-    # end
+
   end
 
-  describe "GET #new" do
+  describe "GET #new" do # if they are logged in then redirect to ___ page
     it "returns http success" do
       get :new
       expect(response).to have_http_status(:success)
@@ -33,24 +26,60 @@ RSpec.describe UsersController, type: :controller do
       get :new
       expect(response).to render_template(:new)
     end
+    
+    context 'if logged in' do
+      before do 
+        allow(controller).to receive(:current_user) { user }
+      end 
+      
+      it "redirects to users index page" do 
+        get :new 
+        expect(response).to redirect_to(users_url)  
+      end 
+    end
+    
+    context 'if logged out' do 
+      before do 
+        allow(controller).to receive(:current_user) { nil }
+      end 
+      
+      it "redirects to users index page" do 
+        get :new 
+        expect(response).to render_template('new')  
+      end 
+    end 
   end
 
-  describe "GET #create" do
+  describe "GET #create" do # if invalid show :new view /// if valid then index page
     it "returns http success" do
       get :create
       expect(response).to have_http_status(:success)
     end
-    # it 're direct index' do
-    #   get :index
-    #   expect(response).to render_template(:index)
-    # end
+  
+    context "if invalid params" do
+      it "shows new view" do
+        post :create, params: { user: {username: 'Mr.banana', password: 'password'}}
+        expect(response).to render_template(:new)
+        expect(flash.now[:errors]).to be_present
+      end
+    end
+    
+    context "if valid params" do
+      it "redirect to users#index page" do
+        post :create, params: { user: {username: 'Mr.banana', password: 'password'}}
+        expect(response).to redirect_to(users_show_url(User.last.id))
+        expect(flash.now[:errors]).to be nil
+      end
+    end
+    
   end
 
-  describe "GET #show" do
+  describe "GET #show" do # in not logged in take then to new_session_url // else show page
     it "returns http success" do
       get :show
       expect(response).to have_http_status(:success)
     end
+    
     it 'renders show' do
       get :show
       expect(response).to render_template(:show)
@@ -62,10 +91,25 @@ RSpec.describe UsersController, type: :controller do
       get :destroy
       expect(response).to have_http_status(:success)
     end
-    # it 'renders index' do
-    #   get :index
-    #   expect(response).to render_template(:index)
-    # end
+
+    context "if invalid params" do
+      it "respond with 401 status" do
+        perform_request
+        expect(request).to be_a_bad_request
+      end
+    end
+    
+    context "if valid params" do
+      it "redirect to users#index page" do
+        expect(response).to redirect_to(users_url)
+      end
+      
+      it "deletes user from database" do
+        subject(:user) {User.create!(username: 'abouttodieguy', password: 'helpme!!!')}
+        delete :destory, params: { id: user.id }
+        expect(User.exists?(user.id)).to be false
+      end
+    end
   end
 
   describe "GET #update" do
