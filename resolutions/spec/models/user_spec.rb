@@ -14,6 +14,9 @@ RSpec.describe User, type: :model do
       user = good_user.save!
       expect(user.session_token).not_to be_nil
     end
+    it "does not save password into the database" do
+      expect(good_user.password_digest).not_to eq('password')
+    end
   end
   
   describe '#reset_session_token' do
@@ -43,7 +46,39 @@ RSpec.describe User, type: :model do
     end   
   end
   
+  describe '#is_password?' do
+    
+    it 'should take in a password' do
+      expect { good_user.is_password?() }.to raise_error(ArgumentError)
+      expect { good_user.is_password?('new_password') }.not_to raise_error(ArgumentError)
+    end
+    
+    it "return true if password is correct" do
+      expect( good_user.is_password?('password') ).to be true
+    end
+    
+    it "returns false if password is incorrect" do
+      expect( good_user.is_password?('123456') ).to be false
+    end
+    
+  end
   
-  # is_password?(password)
-  # ::validate_user_credentials(username, password)
+  describe '::validate_user_credentials' do
+    
+    it "takes a username and password" do
+      expect { User.validate_user_credentials('banana') }.to raise_error(ArgumentError)
+      expect { User.validate_user_credentials('username', 'password') }.not_to raise_error(ArgumentError)
+    end
+    
+    it "returns the user if username and password are correct" do
+      user = good_user.save!
+      expect(User.validate_user_credentials('steve', 'password')).to eq(user)
+    end
+    
+    it "returns nil if username and password are incorrect" do
+      user = good_user.save!
+      expect(User.validate_user_credentials('steve', 'banana')).to eq(user)
+    end    
+  end
+  
 end
