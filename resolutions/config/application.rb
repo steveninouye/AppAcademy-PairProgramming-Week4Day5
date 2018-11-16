@@ -25,5 +25,6 @@ module Resolutions
         controller_specs: true, 
         request_specs: false
     end 
+    # g.fixture_replacement :factory_bot_rails, :dir => "spec/factories"
   end
 end
