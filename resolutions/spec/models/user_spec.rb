@@ -30,9 +30,20 @@ RSpec.describe User, type: :model do
     end  
   end
   
+  describe '#password=' do
+    
+    it 'sets an attr_reader for password' do
+      expect(good_user.password).to eq(password)
+    end
+    
+    it 'changes the password' do 
+      before = good_user.password
+      good_user.password = 'ilovemymom'
+      expect(good_user.password).to_not eq(before) 
+    end   
+  end
   
   
-  # password=(password)
   # is_password?(password)
   # ::validate_user_credentials(username, password)
 end
