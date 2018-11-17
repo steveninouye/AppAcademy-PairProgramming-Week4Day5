@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe UsersController, type: :controller do
-  subject(:user) {User.new(username: 'vampy', password: 'blood')}
+  subject(:user) {User.new(username: 'vampy', password: 'iamthevampire')}
   let(:other_user) {User.new(username: 'Yogi', password: 'bearbear')}
   
   describe "GET #index" do
@@ -34,7 +34,7 @@ RSpec.describe UsersController, type: :controller do
       
       it "redirects to users index page" do 
         get :new 
-        expect(response).to redirect_to(users_url)  
+        expect(response).to redirect_to(users_index_url)  
       end 
     end
     
@@ -43,7 +43,7 @@ RSpec.describe UsersController, type: :controller do
         allow(controller).to receive(:current_user) { nil }
       end 
       
-      it "redirects to users index page" do 
+      it "shows the new page" do 
         get :new 
         expect(response).to render_template('new')  
       end 
@@ -52,18 +52,10 @@ RSpec.describe UsersController, type: :controller do
 
   describe "GET #create" do # if invalid show :new view /// if valid then index page
     it "returns http success" do
-      get :create
-      expect(response).to have_http_status(:success)
+      post :create, params: { user: {username: 'Mr.banana', password: 'password'}}
+      expect(response).to have_http_status(302)
     end
   
-    context "if invalid params" do
-      it "shows new view" do
-        post :create, params: { user: {username: 'Mr.banana', password: 'password'}}
-        expect(response).to render_template(:new)
-        expect(flash.now[:errors]).to be_present
-      end
-    end
-    
     context "if valid params" do
       it "redirect to users#index page" do
         post :create, params: { user: {username: 'Mr.banana', password: 'password'}}
@@ -72,6 +64,13 @@ RSpec.describe UsersController, type: :controller do
       end
     end
     
+    context "if invalid params" do
+      it "shows new view" do
+        post :create, params: { user: {username: 'Mr.banana', password: 'rd'}}
+        expect(response).to render_template('new')
+        expect(flash[:errors]).to be_present
+      end
+    end   
   end
 
   describe "GET #show" do # in not logged in take then to new_session_url // else show page
@@ -87,41 +86,38 @@ RSpec.describe UsersController, type: :controller do
   end
 
   describe "GET #destroy" do
-    it "returns http success" do
-      get :destroy
-      expect(response).to have_http_status(:success)
-    end
 
     context "if invalid params" do
       it "respond with 401 status" do
-        perform_request
-        expect(request).to be_a_bad_request
+        delete :destroy, params: { id: user.id }
+        expect(response).to have_http_status(401)
       end
     end
     
-    context "if valid params" do
+    context "if signed in" do
+      
+      before do 
+        allow(controller).to receive(:current_user) { user }
+      end 
+      
       it "redirect to users#index page" do
-        expect(response).to redirect_to(users_url)
+        delete :destroy
+        expect(response).to redirect_to(users_index_url)
       end
       
       it "deletes user from database" do
-        subject(:user) {User.create!(username: 'abouttodieguy', password: 'helpme!!!')}
-        delete :destory, params: { id: user.id }
+        delete :destroy, params: { id: user.id }
         expect(User.exists?(user.id)).to be false
       end
     end
   end
 
   describe "GET #update" do
-    it "returns http success" do
-      get :update
-      expect(response).to have_http_status(:success)
-    end
     
     context "if logged out" do
       it "respond with 401 status" do
-        perform_request
-        expect(request).to be_a_bad_request
+        patch :update, params: { user: {username: 'banana', password: 'thispassword'} }
+        expect(response).to have_http_status(401)
       end
     end
     
@@ -130,12 +126,14 @@ RSpec.describe UsersController, type: :controller do
         allow(controller).to receive(:current_user) { user }
       end 
       
-      it "redirect to users#index page" do
-        expect(response).to redirect_to(user_url(user.id))
+      it "redirect to users#show page" do
+        patch :update, params: { user: {username: 'banana', password: 'thispassword'} }
+        expect(response).to redirect_to(users_show_url(user.id))
       end
 
       it "updates user in database" do
-        subject(:user) {User.create!(username: 'ineedrefreshing', password: 'whateverIwant')}
+        # subject(:user) {User.create!(username: 'ineedrefreshing', password: 'whateverIwant')}
+        user.save!
         patch :update, params: { user: {username: 'potato'} }
         expect(User.find_by(id: user.id).username).to eq('potato')
       end
